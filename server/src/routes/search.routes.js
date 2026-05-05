@@ -1,0 +1,11 @@
+const express = require('express');
+const router = express.Router();
+const searchController = require('../controllers/search.controller');
+const authMiddleware = require('../middleware/auth.middleware');
+
+router.use(authMiddleware);
+
+router.get('/', searchController.search);
+router.get('/stats', searchController.getStats);
+
+module.exports = router;
