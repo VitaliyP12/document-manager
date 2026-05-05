@@ -5,6 +5,7 @@ const sequelize = require('./config/database');
 require('./models/index');
 
 const authRoutes = require('./routes/auth.routes');
+const documentsRoutes = require('./routes/documents.routes');
 
 const app = express();
 
@@ -14,8 +15,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Роути
 app.use('/api/auth', authRoutes);
+app.use('/api/documents', documentsRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Document Manager API працює!' });
