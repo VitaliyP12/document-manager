@@ -6,6 +6,7 @@ require('./models/index');
 
 const authRoutes = require('./routes/auth.routes');
 const documentsRoutes = require('./routes/documents.routes');
+const tagsRoutes = require('./routes/tags.routes');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentsRoutes);
+app.use('/api/tags', tagsRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Document Manager API працює!' });
