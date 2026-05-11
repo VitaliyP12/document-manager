@@ -3,12 +3,14 @@ import { useDocStore } from '../store/docStore'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
 import AddDocumentModal from '../components/AddDocumentModal'
+import DocumentDetailsModal from '../components/DocumentDetailsModal'
 
 export default function DashboardPage() {
   const { documents, fetchDocuments, fetchTags } = useDocStore()
   const [selectedTag, setSelectedTag] = useState(null)
   const [search, setSearch] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
+  const [selectedDoc, setSelectedDoc] = useState(null)
 
   useEffect(() => {
     fetchDocuments()
@@ -65,6 +67,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filtered.map((doc) => (
                 <div key={doc.id}
+                 onClick={() => setSelectedDoc(doc)}
                   className="bg-slate-800 border border-slate-700 rounded-2xl p-5 hover:border-indigo-500 transition cursor-pointer">
                   <div className="flex items-start justify-between mb-3">
                     <div className="w-10 h-10 rounded-xl bg-indigo-600/20 flex items-center justify-center">
@@ -103,6 +106,12 @@ export default function DashboardPage() {
       {showAddModal && (
         <AddDocumentModal onClose={() => setShowAddModal(false)} />
       )}
+      {selectedDoc && (
+  <DocumentDetailsModal
+    document={documents.find((d) => d.id === selectedDoc.id) || selectedDoc}
+    onClose={() => setSelectedDoc(null)}
+  />
+)}
     </div>
   )
 }

@@ -8,6 +8,7 @@ router.use(authMiddleware);
 
 router.get('/', documentsController.getAll);
 router.get('/:id', documentsController.getOne);
+router.get('/:id/download', documentsController.download);
 router.post('/', upload.single('file'), documentsController.create);
 router.put('/:id', documentsController.update);
 router.delete('/:id', documentsController.remove);

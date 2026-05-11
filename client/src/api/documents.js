@@ -8,3 +8,5 @@ export const createDocument = (formData) =>
   });
 export const updateDocument = (id, data) => api.put(`/documents/${id}`, data);
 export const deleteDocument = (id) => api.delete(`/documents/${id}`);
+export const downloadDocument = (id) =>
+  api.get(`/documents/${id}/download`, { responseType: 'blob' });

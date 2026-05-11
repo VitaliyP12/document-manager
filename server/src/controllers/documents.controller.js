@@ -85,7 +85,6 @@ exports.remove = async (req, res) => {
       return res.status(404).json({ message: 'Документ не знайдено' });
     }
 
-    // Видаляємо файл з диску
     const filePath = path.join(__dirname, '../../uploads', document.file_path);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
@@ -93,6 +92,27 @@ exports.remove = async (req, res) => {
 
     await document.destroy();
     res.json({ message: 'Документ видалено' });
+  } catch (err) {
+    res.status(500).json({ message: 'Помилка сервера', error: err.message });
+  }
+};
+
+exports.download = async (req, res) => {
+  try {
+    const document = await Document.findOne({
+      where: { id: req.params.id, user_id: req.user.id },
+    });
+
+    if (!document) {
+      return res.status(404).json({ message: 'Документ не знайдено' });
+    }
+
+    const filePath = path.join(__dirname, '../../uploads', document.file_path);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'Файл не знайдено' });
+    }
+
+    res.download(filePath, document.original_name);
   } catch (err) {
     res.status(500).json({ message: 'Помилка сервера', error: err.message });
   }
