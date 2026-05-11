@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { useDocStore } from '../store/docStore'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
+import AddDocumentModal from '../components/AddDocumentModal'
 
 export default function DashboardPage() {
   const { documents, fetchDocuments, fetchTags } = useDocStore()
   const [selectedTag, setSelectedTag] = useState(null)
   const [search, setSearch] = useState('')
+  const [showAddModal, setShowAddModal] = useState(false)
 
   useEffect(() => {
     fetchDocuments()
@@ -40,7 +42,10 @@ export default function DashboardPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="px-4 py-2 rounded-xl bg-slate-800 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-sm w-64"
               />
-              <button className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition"
+              >
                 + Додати
               </button>
             </div>
@@ -94,6 +99,10 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+
+      {showAddModal && (
+        <AddDocumentModal onClose={() => setShowAddModal(false)} />
+      )}
     </div>
   )
 }
