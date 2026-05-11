@@ -38,7 +38,10 @@ exports.create = async (req, res) => {
       return res.status(400).json({ message: 'Файл не завантажено' });
     }
 
-    const { title, description } = req.body;
+    const { title, description, tags } = req.body;
+
+    // Виправляємо кодування імені файлу (Multer віддає в latin1)
+    const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
 
     const document = await Document.create({
       title,
@@ -46,11 +49,29 @@ exports.create = async (req, res) => {
       file_path: req.file.filename,
       file_type: req.file.mimetype,
       file_size: req.file.size,
-      original_name: req.file.originalname,
+      original_name: originalName,
       user_id: req.user.id,
     });
 
-    res.status(201).json({ message: 'Документ створено', document });
+    // Прив'язуємо теги якщо передані
+    if (tags) {
+      try {
+        const tagIds = typeof tags === 'string' ? JSON.parse(tags) : tags;
+        if (Array.isArray(tagIds) && tagIds.length > 0) {
+          await document.setTags(tagIds);
+        }
+      } catch (e) {
+        console.error('Помилка прив\'язки тегів:', e);
+      }
+    }
+
+    // Перезавантажуємо з тегами щоб повернути повний об'єкт
+    const fullDocument = await Document.findOne({
+      where: { id: document.id },
+      include: [{ model: Tag }],
+    });
+
+    res.status(201).json({ message: 'Документ створено', document: fullDocument });
   } catch (err) {
     res.status(500).json({ message: 'Помилка сервера', error: err.message });
   }
