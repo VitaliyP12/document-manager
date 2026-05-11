@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as docsApi from '../api/documents';
 import * as tagsApi from '../api/tags';
+import * as searchApi from '../api/search';
 
 export const useDocStore = create((set, get) => ({
   documents: [],
@@ -18,11 +19,21 @@ export const useDocStore = create((set, get) => ({
     }
   },
 
+  searchDocuments: async (params) => {
+  set({ loading: true, error: null });
+  try {
+    const { data } = await searchApi.search(params);
+    set({ documents: data.results || [], loading: false });
+  } catch (err) {
+    set({ error: err.response?.data?.message, loading: false, documents: [] });
+    }
+  },
+
   fetchTags: async () => {
     try {
       const { data } = await tagsApi.getTags();
       set({ tags: data });
-    } catch {}
+    } catch { /* ігноруємо */ }
   },
 
   createDocument: async (formData) => {
@@ -67,20 +78,20 @@ export const useDocStore = create((set, get) => ({
     try {
       await tagsApi.deleteTag(id);
       set((s) => ({ tags: s.tags.filter((t) => t.id !== id) }));
-    } catch {}
+    } catch { /**/ }
   },
 
   addTagToDocument: async (documentId, tagId) => {
     try {
       await tagsApi.addTagToDocument(documentId, tagId);
       await get().fetchDocuments();
-    } catch {}
+    } catch { /**/ }
   },
 
   removeTagFromDocument: async (documentId, tagId) => {
     try {
       await tagsApi.removeTagFromDocument(documentId, tagId);
       await get().fetchDocuments();
-    } catch {}
+    } catch { /**/ }
   },
 }));
