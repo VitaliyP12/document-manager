@@ -30,6 +30,16 @@ export const useDocStore = create((set, get) => ({
     }
   },
 
+  fetchStats: async () => {
+    try {
+      const { data } = await searchApi.getStats()
+      return data
+    } catch {
+      toast.error('Помилка завантаження статистики')
+      return null
+    }
+  },
+
   fetchTags: async () => {
     try {
       const { data } = await tagsApi.getTags()
