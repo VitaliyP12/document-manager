@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useDocStore } from '../store/docStore'
+import FileIcon from './FileIcon'
 
 export default function AddDocumentModal({ onClose }) {
   const { createDocument, tags } = useDocStore()
@@ -8,6 +9,9 @@ export default function AddDocumentModal({ onClose }) {
   const [selectedTags, setSelectedTags] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [dragging, setDragging] = useState(false)
+
+  const acceptedExt = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.json,.html,.zip,.rar,.7z,.jpg,.jpeg,.png,.gif,.webp,.svg,.mp4,.webm,.mov,.avi,.mkv,.mp3,.wav,.ogg,.m4a'
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -19,9 +23,32 @@ export default function AddDocumentModal({ onClose }) {
     )
   }
 
+  const pickFile = (f) => {
+    if (!f) return
+    setFile(f)
+    if (!form.title.trim()) {
+      const nameWithoutExt = f.name.replace(/\.[^/.]+$/, '')
+      setForm((prev) => ({ ...prev, title: nameWithoutExt }))
+    }
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setDragging(false)
+    pickFile(e.dataTransfer.files[0])
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    setDragging(true)
+  }
+
+  const handleDragLeave = () => setDragging(false)
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.title.trim()) return setError('Введіть назву документу')
+    if (!file) return setError('Прикріпіть файл')
 
     setLoading(true)
     setError(null)
@@ -30,7 +57,7 @@ export default function AddDocumentModal({ onClose }) {
       const formData = new FormData()
       formData.append('title', form.title)
       formData.append('description', form.description)
-      if (file) formData.append('file', file)
+      formData.append('file', file)
       if (selectedTags.length > 0)
         formData.append('tags', JSON.stringify(selectedTags))
 
@@ -45,15 +72,9 @@ export default function AddDocumentModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      {/* Фон */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Модалка */}
-      <div className="relative w-full max-w-lg bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 z-10">
-        {/* Заголовок */}
+      <div className="relative w-full max-w-lg bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 z-10 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-slate-700">
           <h2 className="text-lg font-bold text-white">Новий документ</h2>
           <button
@@ -64,7 +85,6 @@ export default function AddDocumentModal({ onClose }) {
           </button>
         </div>
 
-        {/* Форма */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
@@ -102,24 +122,51 @@ export default function AddDocumentModal({ onClose }) {
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
-              Файл
+              Файл <span className="text-red-400">*</span>
             </label>
-            <label className="flex items-center justify-center w-full h-24 rounded-xl border-2 border-dashed border-slate-600 hover:border-indigo-500 cursor-pointer transition bg-slate-900">
-              <div className="text-center">
+            <label
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              className={`flex items-center justify-center w-full min-h-[130px] rounded-xl border-2 border-dashed cursor-pointer transition ${
+                dragging
+                  ? 'border-indigo-500 bg-indigo-500/10'
+                  : 'border-slate-600 hover:border-indigo-500 bg-slate-900'
+              }`}
+            >
+              <div className="text-center px-4 py-3">
                 {file ? (
-                  <p className="text-indigo-400 text-sm font-medium">{file.name}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0">
+                      <FileIcon fileName={file.name} fileType={file.type} className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-indigo-400 text-sm font-medium break-all">{file.name}</p>
+                      <p className="text-slate-500 text-xs mt-0.5">
+                        {(file.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                  </div>
+                ) : dragging ? (
+                  <p className="text-indigo-400 text-sm font-medium">Відпустіть файл сюди</p>
                 ) : (
                   <>
-                    <p className="text-slate-400 text-sm">Клікніть щоб обрати файл</p>
-                    <p className="text-slate-500 text-xs mt-1">PDF, DOC, DOCX, JPG, PNG до 10MB</p>
+                    <svg className="w-8 h-8 mx-auto mb-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p className="text-slate-400 text-sm">Перетягніть файл сюди або клікніть</p>
+                    <p className="text-slate-500 text-xs mt-1">
+                      Документи, таблиці, зображення, відео, аудіо, архіви — до 500MB
+                    </p>
                   </>
                 )}
               </div>
               <input
                 type="file"
                 className="hidden"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
-                onChange={(e) => setFile(e.target.files[0])}
+                accept={acceptedExt}
+                onChange={(e) => pickFile(e.target.files[0])}
               />
             </label>
           </div>
