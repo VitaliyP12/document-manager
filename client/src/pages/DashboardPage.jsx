@@ -7,13 +7,16 @@ import DocumentDetailsModal from '../components/DocumentDetailsModal'
 import FileIcon from '../components/FileIcon'
 
 export default function DashboardPage() {
-  const { documents, tags, fetchDocuments, fetchTags, searchDocuments } = useDocStore()
+  const { documents, tags, fetchDocuments, fetchTags, searchDocuments, deleteMultipleDocuments } = useDocStore()
   const [selectedTag, setSelectedTag] = useState(null)
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('createdAt')
   const [order, setOrder] = useState('DESC')
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedDoc, setSelectedDoc] = useState(null)
+  const [selectedIds, setSelectedIds] = useState([])
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+  const [bulkLoading, setBulkLoading] = useState(false)
 
   useEffect(() => {
     fetchTags()
@@ -37,6 +40,36 @@ export default function DashboardPage() {
 
     return () => clearTimeout(timer)
   }, [search, selectedTag, sortBy, order, tags, searchDocuments, fetchDocuments])
+
+  const toggleSelect = (id, e) => {
+    e.stopPropagation()
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === documents.length) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(documents.map((d) => d.id))
+    }
+  }
+
+  const clearSelection = () => {
+    setSelectedIds([])
+    setConfirmBulkDelete(false)
+  }
+
+  const handleBulkDelete = async () => {
+    setBulkLoading(true)
+    try {
+      await deleteMultipleDocuments(selectedIds)
+      clearSelection()
+    } catch {
+      setBulkLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-900">
@@ -91,6 +124,58 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {selectedIds.length > 0 && (
+            <div className="flex items-center justify-between gap-4 mb-4 p-3 rounded-xl bg-indigo-600/10 border border-indigo-500/30">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={toggleSelectAll}
+                  className="text-sm text-indigo-300 hover:text-white transition"
+                >
+                  {selectedIds.length === documents.length ? 'Зняти всі' : 'Вибрати всі'}
+                </button>
+                <span className="text-sm text-slate-300">
+                  Вибрано: <span className="font-semibold text-white">{selectedIds.length}</span> з {documents.length}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {confirmBulkDelete ? (
+                  <>
+                    <span className="text-sm text-red-400 mr-2">Точно видалити?</span>
+                    <button
+                      onClick={() => setConfirmBulkDelete(false)}
+                      className="px-3 py-1.5 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 text-xs transition"
+                    >
+                      Ні
+                    </button>
+                    <button
+                      onClick={handleBulkDelete}
+                      disabled={bulkLoading}
+                      className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-medium transition"
+                    >
+                      {bulkLoading ? 'Видалення...' : 'Так, видалити'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={clearSelection}
+                      className="px-3 py-1.5 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 text-xs transition"
+                    >
+                      Скасувати
+                    </button>
+                    <button
+                      onClick={() => setConfirmBulkDelete(true)}
+                      className="px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 text-xs font-medium transition"
+                    >
+                      Видалити ({selectedIds.length})
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {documents.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-slate-500">
               <svg className="w-16 h-16 mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,36 +191,61 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {documents.map((doc) => (
-                <div key={doc.id}
-                  onClick={() => setSelectedDoc(doc)}
-                  className="bg-slate-800 border border-slate-700 rounded-2xl p-5 hover:border-indigo-500 transition cursor-pointer">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center">
-                      <FileIcon fileName={doc.original_name} fileType={doc.file_type} className="w-5 h-5" />
+              {documents.map((doc) => {
+                const isSelected = selectedIds.includes(doc.id)
+                return (
+                  <div key={doc.id}
+                    onClick={() => setSelectedDoc(doc)}
+                    className={`relative bg-slate-800 border rounded-2xl p-5 transition cursor-pointer ${
+                      isSelected
+                        ? 'border-indigo-500 ring-2 ring-indigo-500/30'
+                        : 'border-slate-700 hover:border-indigo-500'
+                    }`}>
+
+                    <button
+                      onClick={(e) => toggleSelect(doc.id, e)}
+                      className={`absolute top-3 right-3 w-6 h-6 rounded-md flex items-center justify-center transition ${
+                        isSelected
+                          ? 'bg-indigo-600 border border-indigo-500'
+                          : 'bg-slate-900 border border-slate-600 opacity-0 group-hover:opacity-100 hover:opacity-100'
+                      }`}
+                      style={isSelected ? {} : { opacity: 1 }}
+                      title={isSelected ? 'Зняти вибір' : 'Вибрати'}
+                    >
+                      {isSelected && (
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+
+                    <div className="flex items-start justify-between mb-3 pr-8">
+                      <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center">
+                        <FileIcon fileName={doc.original_name} fileType={doc.file_type} className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs text-slate-500">
+                        {new Date(doc.createdAt).toLocaleDateString('uk-UA')}
+                      </span>
                     </div>
-                    <span className="text-xs text-slate-500">
-                      {new Date(doc.createdAt).toLocaleDateString('uk-UA')}
-                    </span>
+
+                    <h3 className="font-semibold text-white mb-1 truncate">{doc.title}</h3>
+                    <p className="text-slate-400 text-sm mb-3 line-clamp-2">
+                      {doc.description || 'Без опису'}
+                    </p>
+
+                    {doc.Tags?.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {doc.Tags.map((tag) => (
+                          <span key={tag.id}
+                            className="px-2 py-0.5 rounded-full bg-indigo-600/20 text-indigo-300 text-xs">
+                            {tag.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-
-                  <h3 className="font-semibold text-white mb-1 truncate">{doc.title}</h3>
-                  <p className="text-slate-400 text-sm mb-3 line-clamp-2">
-                    {doc.description || 'Без опису'}
-                  </p>
-
-                  {doc.Tags?.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {doc.Tags.map((tag) => (
-                        <span key={tag.id}
-                          className="px-2 py-0.5 rounded-full bg-indigo-600/20 text-indigo-300 text-xs">
-                          {tag.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </main>

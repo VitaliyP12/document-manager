@@ -84,6 +84,18 @@ export const useDocStore = create((set, get) => ({
     }
   },
 
+  deleteMultipleDocuments: async (ids) => {
+   try {
+    await Promise.all(ids.map((id) => docsApi.deleteDocument(id)))
+    set((s) => ({ documents: s.documents.filter((d) => !ids.includes(d.id)) }))
+    toast.success(`Видалено документів: ${ids.length}`)
+   } catch (err) {
+    const msg = err.response?.data?.message || 'Помилка видалення'
+    toast.error(msg)
+    throw msg
+   }
+ },
+
   createTag: async (payload) => {
     try {
       const { data } = await tagsApi.createTag(payload)
