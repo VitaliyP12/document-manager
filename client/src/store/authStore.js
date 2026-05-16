@@ -49,5 +49,24 @@ export const useAuthStore = create((set) => ({
     set({ user: null, token: null });
   },
 
+  updateProfile: async (data) => {
+  try {
+    const { data: response } = await (await import('../api/auth')).updateProfile(data);
+    set({ user: response.user });
+    return true;
+  } catch (err) {
+    return { error: err.response?.data?.message || 'Помилка оновлення' };
+  }
+},
+
+changePassword: async (data) => {
+  try {
+    await (await import('../api/auth')).changePassword(data);
+    return true;
+  } catch (err) {
+    return { error: err.response?.data?.message || 'Помилка зміни пароля' };
+  }
+},
+
   clearError: () => set({ error: null }),
 }));

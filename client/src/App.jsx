@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import StatsPage from './pages/StatsPage'
+import ProfilePage from './pages/ProfilePage'
 
 function PrivateRoute({ children }) {
   const token = useAuthStore((s) => s.token)
@@ -30,6 +31,7 @@ export default function App() {
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
       <Route path="/stats" element={<PrivateRoute><StatsPage /></PrivateRoute>} />
+      <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

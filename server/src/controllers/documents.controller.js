@@ -53,7 +53,6 @@ exports.create = async (req, res) => {
       user_id: req.user.id,
     });
 
-    // Прив'язуємо теги якщо передані
     if (tags) {
       try {
         const tagIds = typeof tags === 'string' ? JSON.parse(tags) : tags;
@@ -64,8 +63,7 @@ exports.create = async (req, res) => {
         console.error('Помилка прив\'язки тегів:', e);
       }
     }
-
-    // Перезавантажуємо з тегами щоб повернути повний об'єкт
+    
     const fullDocument = await Document.findOne({
       where: { id: document.id },
       include: [{ model: Tag }],

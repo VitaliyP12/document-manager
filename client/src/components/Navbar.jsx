@@ -48,17 +48,27 @@ export default function Navbar() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-4">
-        <span className="text-slate-400 text-sm">
-          {user?.name || user?.email}
-        </span>
-        <button
-          onClick={handleLogout}
-          className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white text-sm transition"
-        >
-          Вийти
-        </button>
-      </div>
-    </header>
+      <div className="flex items-center gap-3">
+  <Link
+    to="/profile"
+    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition ${
+      location.pathname === '/profile'
+        ? 'bg-slate-700 text-white'
+        : 'text-slate-400 hover:text-white hover:bg-slate-700'
+    }`}
+  >
+    <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+      {(user?.name || user?.email || '?')[0].toUpperCase()}
+    </div>
+    <span>{user?.name || user?.email}</span>
+  </Link>
+  <button
+    onClick={handleLogout}
+    className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white text-sm transition"
+  >
+    Вийти
+      </button>
+    </div>
+  </header>
   )
 }

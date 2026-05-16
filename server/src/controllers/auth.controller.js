@@ -70,3 +70,61 @@ exports.getMe = async (req, res) => {
     res.status(500).json({ message: 'Помилка сервера', error: err.message });
   }
 };
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'Користувача не знайдено' });
+    }
+
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Цей email вже зайнятий' });
+      }
+    }
+
+    await user.update({ name: name || user.name, email: email || user.email });
+
+    res.json({
+      message: 'Профіль оновлено',
+      user: { id: user.id, name: user.name, email: user.email }
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Помилка сервера', error: err.message });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: 'Введіть старий і новий пароль' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Новий пароль має бути не менше 6 символів' });
+    }
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'Користувача не знайдено' });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Невірний поточний пароль' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await user.update({ password: hashedPassword });
+
+    res.json({ message: 'Пароль успішно змінено' });
+  } catch (err) {
+    res.status(500).json({ message: 'Помилка сервера', error: err.message });
+  }
+};
