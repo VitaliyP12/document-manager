@@ -3,7 +3,7 @@ import { useDocStore } from '../store/docStore'
 import FileIcon from './FileIcon'
 
 export default function DocumentDetailsModal({ document, onClose }) {
-  const { tags, deleteDocument, updateDocument, addTagToDocument, removeTagFromDocument } = useDocStore()
+  const { tags, folders, deleteDocument, updateDocument, addTagToDocument, removeTagFromDocument, moveDocumentToFolder } = useDocStore()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -78,6 +78,10 @@ export default function DocumentDetailsModal({ document, onClose }) {
 
   const handleRemoveTag = async (tagId) => {
     await removeTagFromDocument(document.id, tagId)
+  }
+
+  const handleChangeFolder = async (folderId) => {
+    await moveDocumentToFolder(document.id, folderId || null)
   }
 
   return (
@@ -223,6 +227,24 @@ export default function DocumentDetailsModal({ document, onClose }) {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {!editing && (
+            <div>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Папка
+              </h3>
+              <select
+                value={document.folder_id || ''}
+                onChange={(e) => handleChangeFolder(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white text-sm focus:outline-none focus:border-indigo-500"
+              >
+                <option value="">Без папки</option>
+                {folders.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
             </div>
           )}
 

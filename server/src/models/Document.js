@@ -27,6 +27,10 @@ const Document = sequelize.define('Document', {
   original_name: {
     type: DataTypes.STRING,
   },
+  folder_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+  },
 });
 
 module.exports = Document;

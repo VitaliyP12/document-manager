@@ -4,8 +4,17 @@ const path = require('path');
 
 exports.getAll = async (req, res) => {
   try {
+    const { folder_id } = req.query;
+    const whereClause = { user_id: req.user.id };
+
+    if (folder_id === 'null') {
+      whereClause.folder_id = null;
+    } else if (folder_id) {
+      whereClause.folder_id = folder_id;
+    }
+
     const documents = await Document.findAll({
-      where: { user_id: req.user.id },
+      where: whereClause,
       include: [{ model: Tag }],
       order: [['createdAt', 'DESC']],
     });

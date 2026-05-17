@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useDocStore } from '../store/docStore'
 import TagsManagerModal from './TagsManagerModal'
+import FoldersList from './FoldersList'
 
 export default function Sidebar({ selectedTag, onSelectTag }) {
   const { tags } = useDocStore()
@@ -13,7 +14,7 @@ export default function Sidebar({ selectedTag, onSelectTag }) {
 
   return (
     <>
-      <aside className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col p-4">
+      <aside className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col p-4 overflow-y-auto">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Фільтр за тегами
@@ -68,6 +69,8 @@ export default function Sidebar({ selectedTag, onSelectTag }) {
             + Створити перший тег
           </button>
         )}
+
+        <FoldersList />
       </aside>
 
       {showTagsManager && (

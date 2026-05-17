@@ -7,7 +7,17 @@ import DocumentDetailsModal from '../components/DocumentDetailsModal'
 import FileIcon from '../components/FileIcon'
 
 export default function DashboardPage() {
-  const { documents, tags, fetchDocuments, fetchTags, searchDocuments, deleteMultipleDocuments } = useDocStore()
+  const {
+    documents,
+    tags,
+    folders,
+    currentFolderId,
+    fetchDocuments,
+    fetchTags,
+    fetchFolders,
+    searchDocuments,
+    deleteMultipleDocuments,
+  } = useDocStore()
   const [selectedTag, setSelectedTag] = useState(null)
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('createdAt')
@@ -20,7 +30,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchTags()
-  }, [fetchTags])
+    fetchFolders()
+  }, [fetchTags, fetchFolders])
 
   useEffect(() => {
     const params = { sort: sortBy, order }
@@ -34,12 +45,12 @@ export default function DashboardPage() {
       if (search.trim() || selectedTag || sortBy !== 'createdAt' || order !== 'DESC') {
         searchDocuments(params)
       } else {
-        fetchDocuments()
+        fetchDocuments(currentFolderId)
       }
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [search, selectedTag, sortBy, order, tags, searchDocuments, fetchDocuments])
+  }, [search, selectedTag, sortBy, order, tags, currentFolderId, searchDocuments, fetchDocuments])
 
   const toggleSelect = (id, e) => {
     e.stopPropagation()
@@ -71,6 +82,9 @@ export default function DashboardPage() {
     }
   }
 
+  const currentFolder = folders.find((f) => f.id === currentFolderId)
+  const heading = currentFolder ? `Папка: ${currentFolder.name}` : 'Мої документи'
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-900">
       <Navbar />
@@ -80,7 +94,7 @@ export default function DashboardPage() {
 
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-            <h1 className="text-xl font-bold text-white">Мої документи</h1>
+            <h1 className="text-xl font-bold text-white">{heading}</h1>
 
             <div className="flex items-center gap-3 flex-wrap">
               <div className="relative">

@@ -3,17 +3,25 @@ import toast from 'react-hot-toast'
 import * as docsApi from '../api/documents'
 import * as tagsApi from '../api/tags'
 import * as searchApi from '../api/search'
+import * as foldersApi from '../api/folders'
 
 export const useDocStore = create((set, get) => ({
   documents: [],
   tags: [],
+  folders: [],
+  currentFolderId: null,
   loading: false,
   error: null,
 
-  fetchDocuments: async () => {
+  setCurrentFolder: (folderId) => set({ currentFolderId: folderId }),
+
+  fetchDocuments: async (folderId) => {
     set({ loading: true, error: null })
     try {
-      const { data } = await docsApi.getDocuments()
+      const params = {}
+      if (folderId === null) params.folder_id = 'null'
+      else if (folderId) params.folder_id = folderId
+      const { data } = await docsApi.getDocuments(params)
       set({ documents: data, loading: false })
     } catch (err) {
       set({ error: err.response?.data?.message, loading: false })
@@ -47,10 +55,68 @@ export const useDocStore = create((set, get) => ({
     } catch { /* ігноруємо */ }
   },
 
+  fetchFolders: async () => {
+    try {
+      const { data } = await foldersApi.getFolders()
+      set({ folders: data })
+    } catch { /* ігноруємо */ }
+  },
+
+  createFolder: async (payload) => {
+    try {
+      const { data } = await foldersApi.createFolder(payload)
+      set((s) => ({ folders: [...s.folders, data.folder] }))
+      toast.success('Папку створено')
+      return data.folder
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Помилка створення папки'
+      toast.error(msg)
+      throw msg
+    }
+  },
+
+  updateFolder: async (id, payload) => {
+    try {
+      await foldersApi.updateFolder(id, payload)
+      await get().fetchFolders()
+      toast.success('Папку оновлено')
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Помилка оновлення'
+      toast.error(msg)
+      throw msg
+    }
+  },
+
+  deleteFolder: async (id) => {
+    try {
+      await foldersApi.deleteFolder(id)
+      set((s) => ({ folders: s.folders.filter((f) => f.id !== id) }))
+      toast.success('Папку видалено')
+      if (get().currentFolderId === id) {
+        set({ currentFolderId: null })
+        await get().fetchDocuments(null)
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Помилка видалення'
+      toast.error(msg)
+    }
+  },
+
+  moveDocumentToFolder: async (documentId, folderId) => {
+    try {
+      await foldersApi.moveDocument(documentId, folderId)
+      await get().fetchDocuments(get().currentFolderId)
+      toast.success(folderId ? 'Документ переміщено' : 'Документ переміщено з папки')
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Помилка переміщення'
+      toast.error(msg)
+    }
+  },
+
   createDocument: async (formData) => {
     try {
       const { data } = await docsApi.createDocument(formData)
-      await get().fetchDocuments()
+      await get().fetchDocuments(get().currentFolderId)
       toast.success('Документ створено')
       return data
     } catch (err) {
@@ -63,7 +129,7 @@ export const useDocStore = create((set, get) => ({
   updateDocument: async (id, payload) => {
     try {
       await docsApi.updateDocument(id, payload)
-      await get().fetchDocuments()
+      await get().fetchDocuments(get().currentFolderId)
       toast.success('Документ оновлено')
     } catch (err) {
       const msg = err.response?.data?.message || 'Помилка оновлення'
@@ -85,16 +151,16 @@ export const useDocStore = create((set, get) => ({
   },
 
   deleteMultipleDocuments: async (ids) => {
-   try {
-    await Promise.all(ids.map((id) => docsApi.deleteDocument(id)))
-    set((s) => ({ documents: s.documents.filter((d) => !ids.includes(d.id)) }))
-    toast.success(`Видалено документів: ${ids.length}`)
-   } catch (err) {
-    const msg = err.response?.data?.message || 'Помилка видалення'
-    toast.error(msg)
-    throw msg
-   }
- },
+    try {
+      await Promise.all(ids.map((id) => docsApi.deleteDocument(id)))
+      set((s) => ({ documents: s.documents.filter((d) => !ids.includes(d.id)) }))
+      toast.success(`Видалено документів: ${ids.length}`)
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Помилка видалення'
+      toast.error(msg)
+      throw msg
+    }
+  },
 
   createTag: async (payload) => {
     try {
@@ -120,14 +186,14 @@ export const useDocStore = create((set, get) => ({
   addTagToDocument: async (documentId, tagId) => {
     try {
       await tagsApi.addTagToDocument(documentId, tagId)
-      await get().fetchDocuments()
+      await get().fetchDocuments(get().currentFolderId)
     } catch { /* ігноруємо */ }
   },
 
   removeTagFromDocument: async (documentId, tagId) => {
     try {
       await tagsApi.removeTagFromDocument(documentId, tagId)
-      await get().fetchDocuments()
+      await get().fetchDocuments(get().currentFolderId)
     } catch { /* ігноруємо */ }
   },
 }))

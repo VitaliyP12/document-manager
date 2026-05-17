@@ -1,6 +1,6 @@
 import api from './client';
 
-export const getDocuments = () => api.get('/documents');
+export const getDocuments = (params) => api.get('/documents', { params });
 export const getDocument = (id) => api.get(`/documents/${id}`);
 export const createDocument = (formData) =>
   api.post('/documents', formData, {
