@@ -6,6 +6,13 @@ import AddDocumentModal from '../components/AddDocumentModal'
 import DocumentDetailsModal from '../components/DocumentDetailsModal'
 import FileIcon from '../components/FileIcon'
 
+function highlightText(text, query) {
+  if (!text || !query) return text || ''
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(${escaped})`, 'gi')
+  return text.replace(regex, '<mark class="bg-indigo-500/40 text-white rounded px-0.5">$1</mark>')
+}
+
 export default function DashboardPage() {
   const {
     documents,
@@ -94,7 +101,14 @@ export default function DashboardPage() {
 
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-            <h1 className="text-xl font-bold text-white">{heading}</h1>
+            <div>
+              <h1 className="text-xl font-bold text-white">{heading}</h1>
+              {search.trim() && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Знайдено: <span className="text-indigo-400 font-medium">{documents.length}</span> за запитом "{search}"
+                </p>
+              )}
+            </div>
 
             <div className="flex items-center gap-3 flex-wrap">
               <div className="relative">
@@ -105,7 +119,7 @@ export default function DashboardPage() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Пошук документів..."
+                  placeholder="Пошук по назві, описі, вмісту..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9 pr-4 py-2 rounded-xl bg-slate-800 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-sm w-64"
@@ -242,10 +256,26 @@ export default function DashboardPage() {
                       </span>
                     </div>
 
-                    <h3 className="font-semibold text-white mb-1 truncate">{doc.title}</h3>
-                    <p className="text-slate-400 text-sm mb-3 line-clamp-2">
-                      {doc.description || 'Без опису'}
-                    </p>
+                    <h3 className="font-semibold text-white mb-1 truncate"
+                      dangerouslySetInnerHTML={{ __html: highlightText(doc.title, search) }} />
+
+                    {doc.snippet ? (
+                      <div className="mb-3">
+                        <p className="text-xs text-indigo-400 font-medium mb-1 flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          Знайдено у вмісті:
+                        </p>
+                        <p className="text-slate-300 text-xs line-clamp-2 italic"
+                          dangerouslySetInnerHTML={{ __html: highlightText(doc.snippet, search) }} />
+                      </div>
+                    ) : (
+                      <p className="text-slate-400 text-sm mb-3 line-clamp-2">
+                        {doc.description || 'Без опису'}
+                      </p>
+                    )}
 
                     {doc.Tags?.length > 0 && (
                       <div className="flex flex-wrap gap-1">

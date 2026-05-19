@@ -31,6 +31,9 @@ const Document = sequelize.define('Document', {
     type: DataTypes.UUID,
     allowNull: true,
   },
+  content: {
+    type: DataTypes.TEXT,
+  },
 });
 
 module.exports = Document;

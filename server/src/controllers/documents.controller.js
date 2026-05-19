@@ -1,4 +1,5 @@
 const { Document, Tag } = require('../models/index');
+const { extractText } = require('../utils/extractText');
 const fs = require('fs');
 const path = require('path');
 
@@ -15,6 +16,7 @@ exports.getAll = async (req, res) => {
 
     const documents = await Document.findAll({
       where: whereClause,
+      attributes: { exclude: ['content'] },
       include: [{ model: Tag }],
       order: [['createdAt', 'DESC']],
     });
@@ -28,6 +30,7 @@ exports.getOne = async (req, res) => {
   try {
     const document = await Document.findOne({
       where: { id: req.params.id, user_id: req.user.id },
+      attributes: { exclude: ['content'] },
       include: [{ model: Tag }],
     });
 
@@ -48,9 +51,9 @@ exports.create = async (req, res) => {
     }
 
     const { title, description, tags } = req.body;
-
-    // Виправляємо кодування імені файлу (Multer віддає в latin1)
     const originalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+
+    const content = await extractText(req.file.filename, req.file.mimetype, originalName);
 
     const document = await Document.create({
       title,
@@ -59,6 +62,7 @@ exports.create = async (req, res) => {
       file_type: req.file.mimetype,
       file_size: req.file.size,
       original_name: originalName,
+      content,
       user_id: req.user.id,
     });
 
@@ -72,9 +76,10 @@ exports.create = async (req, res) => {
         console.error('Помилка прив\'язки тегів:', e);
       }
     }
-    
+
     const fullDocument = await Document.findOne({
       where: { id: document.id },
+      attributes: { exclude: ['content'] },
       include: [{ model: Tag }],
     });
 
